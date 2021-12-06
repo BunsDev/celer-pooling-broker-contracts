@@ -31,18 +31,18 @@ abstract contract AbstractBroker is ERC20Burnable, Ownable {
         uint256 vaultIdOutput;
         uint256 quantumOutput;
     }
-    mapping(uint256 => RideAssetsInfo) internal rideAssetsInfos; //rideid => RideAssetsInfo
+    mapping (uint256 => RideAssetsInfo) internal rideAssetsInfos; //rideid => RideAssetsInfo
 
     mapping (uint256=>uint256) public ridesShares; // rideid=>amount
+    mapping (uint256=>bool) public rideDeparted; // rideid=>bool
 
     /**
-     * @dev Constructor that gives msg.sender an initial supply of tokens.
+     * @dev Constructor
      */
     constructor(
         string memory _name,
         string memory _symbol,
         uint8 decimals_,
-        uint256 _initialSupply,
         address _exchange,
         address _orderRegistry,
         address _onchainVaults
@@ -51,7 +51,6 @@ abstract contract AbstractBroker is ERC20Burnable, Ownable {
         exchange = _exchange;
         orderRegistry = _orderRegistry;
         onchainVaults = _onchainVaults;
-        _mint(msg.sender, _initialSupply);
     }
 
     /**
@@ -88,12 +87,12 @@ abstract contract AbstractBroker is ERC20Burnable, Ownable {
     /**
      * @notice 
      */
-    function mintAndSell(uint256 _rideId, uint256 _amount, uint256 _tokenIdFee, uint256 _amountFee, uint256 _vaultIdFee) virtual external;
+    function mintShareAndSell(uint256 _rideId, uint256 _amount, uint256 _tokenIdFee, uint256 _amountFee, uint256 _vaultIdFee) virtual external;
 
     /**
      * @notice 
      */
-    function cancelSell(uint256 _rideId, uint256 _amount) virtual external;
+    function cancelSell(uint256 _rideId, uint256 _tokenIdFee, uint256 _amountFee, uint256 _vaultIdFee) virtual external;
 
     /**
      * @notice 
@@ -103,12 +102,12 @@ abstract contract AbstractBroker is ERC20Burnable, Ownable {
     /**
      * @notice 
      */
-    function burnRideShares(uint256 _rideId) virtual external;
+    function burnRideShares(uint256 _rideId) virtual public;
 
     /**
      * @notice 
      */
-    function redeemShare(uint256 _amount) virtual external;
+    function redeemShare(uint256 _rideId, uint256 _amount) virtual external;
 
     function decimals() public view override returns (uint8) {
         return _decimals;

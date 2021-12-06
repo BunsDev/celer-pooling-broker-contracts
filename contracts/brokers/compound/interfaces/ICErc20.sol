@@ -70,4 +70,6 @@ interface ICErc20 {
      * @return Whether or not the approval succeeded
      */
     function approve(address spender, uint256 amount) external returns (bool);
+
+    function transfer(address dst, uint256 amount) external returns (bool);
 }
