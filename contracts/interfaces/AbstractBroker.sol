@@ -16,8 +16,8 @@ abstract contract AbstractBroker is ERC20Burnable, Ownable {
     address public orderRegistry;
     address public onchainVaults;
 
-    mapping (uint256=>uint256) public prices; // rideid=>price, price in decimal 1e18
-    uint256 public constant PRICE_DECIMALS = 1e18;
+    mapping (uint256=>uint256) public prices; // rideid=>price, price in decimal 1e6
+    uint256 public constant PRICE_DECIMALS = 1e6;
     mapping (uint256=>uint256) public slippages; // rideid=>slippage, slippage in denominator 10000
     uint256 public constant SLIPPAGE_DENOMINATOR = 10000;
     struct RideAssetsInfo {
@@ -65,20 +65,21 @@ abstract contract AbstractBroker is ERC20Burnable, Ownable {
      * @notice 
      */
     function setSlippage(uint256 _rideId, uint256 _slippage) external onlyOwner {
+        require(_slippage <= 10000, "invalid slippage");
         prices[_rideId] = _slippage;
     }
 
     function addRideAssetsInfo(uint256 _rideId, uint256[] memory _assetsInfo) external onlyOwner {
-        require(_assetsInfo.length == 9, "worng ride assets info");
-        require(_assetsInfo[0] != 0, "wrong tokenIdShare");
-        require(_assetsInfo[1] != 0, "wrong vaultIdShare");
-        require(_assetsInfo[2] != 0, "wrong quantumShare");
-        require(_assetsInfo[3] != 0, "wrong tokenIdInput");
-        require(_assetsInfo[4] != 0, "wrong vaultIdInput");
-        require(_assetsInfo[5] != 0, "wrong quantumInput");
-        require(_assetsInfo[6] != 0, "wrong tokenIdOutput");
-        require(_assetsInfo[7] != 0, "wrong vaultIdOutput");
-        require(_assetsInfo[8] != 0, "wrong quantumOutput");
+        require(_assetsInfo.length == 9, "invalid ride assets info");
+        require(_assetsInfo[0] != 0, "invalid tokenIdShare");
+        require(_assetsInfo[1] != 0, "invalid vaultIdShare");
+        require(_assetsInfo[2] != 0, "invalid quantumShare");
+        require(_assetsInfo[3] != 0, "invalid tokenIdInput");
+        require(_assetsInfo[4] != 0, "invalid vaultIdInput");
+        require(_assetsInfo[5] != 0, "invalid quantumInput");
+        require(_assetsInfo[6] != 0, "invalid tokenIdOutput");
+        require(_assetsInfo[7] != 0, "invalid vaultIdOutput");
+        require(_assetsInfo[8] != 0, "invalid quantumOutput");
         RideAssetsInfo memory assetsInfo = RideAssetsInfo(_assetsInfo[0], _assetsInfo[1], _assetsInfo[2],
             _assetsInfo[3], _assetsInfo[4], _assetsInfo[5], _assetsInfo[6], _assetsInfo[7], _assetsInfo[8]);
         rideAssetsInfos[_rideId] = assetsInfo;
@@ -97,7 +98,7 @@ abstract contract AbstractBroker is ERC20Burnable, Ownable {
     /**
      * @notice 
      */
-    function departRide(uint256 _rideId) virtual external;
+    function departRide(uint256 _rideId, uint256 _tokenIdFee, uint256 _amountFee, uint256 _vaultIdFee) virtual external;
 
     /**
      * @notice 
