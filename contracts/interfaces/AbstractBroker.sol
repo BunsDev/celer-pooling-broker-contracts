@@ -8,12 +8,19 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
- * @title abstract DeFi broker pool
+ * @title abstract DeFi broker pool, as the parent of actual broker contracts, such as compound broker pool, aave broker pool etc
  */
 abstract contract AbstractBroker is ERC20Burnable, Ownable {
+    event PriceChange(uint256 rideId, uint256 oldVal, uint256 newVal);
+    event SlippageChange(uint256 rideId, uint256 oldVal, uint256 newVal);
+    event RideAssetsInfoRegistered(uint256 rideId, RideAssetsInfo assetsInfo);
+    event MintAndSell(uint256 rideId, uint256 mintShareAmt);
+    event CancelSell(uint256 rideId, uint256 cancelShareAmt);
+    event RideDeparted(uint256 rideId, uint256 usedInputTokenAmt);
+    event SharesBurned(uint256 rideId, uint256 burnedShareAmt);
+    event SharesRedeemed(uint256 rideId, uint256 redeemedShareAmt);
+
     uint8 private _decimals;
-    address public exchange;
-    address public orderRegistry;
     address public onchainVaults;
 
     mapping (uint256=>uint256) public prices; // rideid=>price, price in decimal 1e6
@@ -23,13 +30,10 @@ abstract contract AbstractBroker is ERC20Burnable, Ownable {
     struct RideAssetsInfo {
         uint256 tokenIdShare;
         uint256 vaultIdShare;
-        uint256 quantumShare;
         uint256 tokenIdInput;
         uint256 vaultIdInput;
-        uint256 quantumInput;
         uint256 tokenIdOutput;
         uint256 vaultIdOutput;
-        uint256 quantumOutput;
     }
     mapping (uint256 => RideAssetsInfo) internal rideAssetsInfos; //rideid => RideAssetsInfo
 
@@ -43,21 +47,19 @@ abstract contract AbstractBroker is ERC20Burnable, Ownable {
         string memory _name,
         string memory _symbol,
         uint8 decimals_,
-        address _exchange,
-        address _orderRegistry,
         address _onchainVaults
     ) ERC20(_name, _symbol) {
         _decimals = decimals_;
-        exchange = _exchange;
-        orderRegistry = _orderRegistry;
         onchainVaults = _onchainVaults;
     }
 
     /**
-     * @notice 
+     * @notice can be set multiple times, will use latest when ride departure.
      */
     function setPrice(uint256 _rideId, uint256 _price) external onlyOwner {
+        uint256 oldVal = prices[_rideId];
         prices[_rideId] = _price;
+        emit PriceChange(_rideId, oldVal, _price);
     }
 
     /**
@@ -65,23 +67,24 @@ abstract contract AbstractBroker is ERC20Burnable, Ownable {
      */
     function setSlippage(uint256 _rideId, uint256 _slippage) external onlyOwner {
         require(_slippage <= 10000, "invalid slippage");
-        prices[_rideId] = _slippage;
+        uint256 oldVal = slippages[_rideId];
+        slippages[_rideId] = _slippage;
+        emit SlippageChange(_rideId, oldVal, _slippage);
     }
 
     function addRideAssetsInfo(uint256 _rideId, uint256[] memory _assetsInfo) external onlyOwner {
-        require(_assetsInfo.length == 9, "invalid ride assets info");
+        require(_assetsInfo.length == 6, "invalid ride assets info");
         require(_assetsInfo[0] != 0, "invalid tokenIdShare");
         require(_assetsInfo[1] != 0, "invalid vaultIdShare");
-        require(_assetsInfo[2] != 0, "invalid quantumShare");
-        require(_assetsInfo[3] != 0, "invalid tokenIdInput");
-        require(_assetsInfo[4] != 0, "invalid vaultIdInput");
-        require(_assetsInfo[5] != 0, "invalid quantumInput");
-        require(_assetsInfo[6] != 0, "invalid tokenIdOutput");
-        require(_assetsInfo[7] != 0, "invalid vaultIdOutput");
-        require(_assetsInfo[8] != 0, "invalid quantumOutput");
+        require(_assetsInfo[2] != 0, "invalid tokenIdInput");
+        require(_assetsInfo[3] != 0, "invalid vaultIdInput");
+        require(_assetsInfo[4] != 0, "invalid tokenIdOutput");
+        require(_assetsInfo[5] != 0, "invalid vaultIdOutput");
         RideAssetsInfo memory assetsInfo = RideAssetsInfo(_assetsInfo[0], _assetsInfo[1], _assetsInfo[2],
-            _assetsInfo[3], _assetsInfo[4], _assetsInfo[5], _assetsInfo[6], _assetsInfo[7], _assetsInfo[8]);
+            _assetsInfo[3], _assetsInfo[4], _assetsInfo[5]);
         rideAssetsInfos[_rideId] = assetsInfo;
+
+        emit RideAssetsInfoRegistered(_rideId, assetsInfo);
     }
 
     /**
