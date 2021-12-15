@@ -15,6 +15,12 @@ interface IOnchainVaults {
         uint256 quantizedAmount
     ) external;
 
+    function getQuantizedVaultBalance(
+        address ethKey,
+        uint256 assetId,
+        uint256 vaultId
+    ) external view returns (uint256);
+
     function getVaultBalance(
         address ethKey,
         uint256 assetId,
@@ -24,4 +30,6 @@ interface IOnchainVaults {
     function getQuantum(uint256 presumedAssetType) external view returns (uint256);
 
     function orderRegistryAddress() external view returns (address);
+
+    function registeredAssetType(uint256 assetType) external view returns (bool);
 }
