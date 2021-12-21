@@ -13,11 +13,18 @@ dotenv.config();
 const DEFAULT_ENDPOINT = 'http://localhost:8545';
 const DEFAULT_PRIVATE_KEY = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
 
+const goerliEndpoint = process.env.GOERLI_ENDPOINT || DEFAULT_ENDPOINT;
+const goerliPrivateKey = process.env.GOERLI_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
     hardhat: {},
     localhost: { timeout: 600000 },
+    goerli: {
+      url: goerliEndpoint,
+      accounts: [`0x${goerliPrivateKey}`]
+    },
   },
   namedAccounts: {
     deployer: {

@@ -18,14 +18,15 @@ contract Broker is Ownable {
     using Address for address;
     using SafeERC20 for IERC20;
 
-    event PriceChange(uint256 rideId, uint256 oldVal, uint256 newVal);
-    event SlippageChange(uint256 rideId, uint256 oldVal, uint256 newVal);
+    event PriceChanged(uint256 rideId, uint256 oldVal, uint256 newVal);
+    event SlippageChanged(uint256 rideId, uint256 oldVal, uint256 newVal);
     event RideInfoRegistered(uint256 rideId, RideInfo rideInfo);
     event MintAndSell(uint256 rideId, uint256 mintShareAmt, uint256 price, uint256 slippage);
     event CancelSell(uint256 rideId, uint256 cancelShareAmt);
     event RideDeparted(uint256 rideId, uint256 usedInputTokenAmt);
     event SharesBurned(uint256 rideId, uint256 burnedShareAmt);
     event SharesRedeemed(uint256 rideId, uint256 redeemedShareAmt);
+    event OnchainVaultsChanged(address oldAddr, address newAddr);
 
     address public onchainVaults;
 
@@ -85,7 +86,7 @@ contract Broker is Ownable {
 
         uint256 oldVal = prices[_rideId];
         prices[_rideId] = _price;
-        emit PriceChange(_rideId, oldVal, _price);
+        emit PriceChanged(_rideId, oldVal, _price);
     }
 
     /**
@@ -97,7 +98,7 @@ contract Broker is Ownable {
 
         uint256 oldVal = slippages[_rideId];
         slippages[_rideId] = _slippage;
-        emit SlippageChange(_rideId, oldVal, _slippage);
+        emit SlippageChanged(_rideId, oldVal, _slippage);
     }
 
     /**
@@ -275,5 +276,10 @@ contract Broker is Ownable {
         address orderRegistryAddr = IOnchainVaults(onchainVaults).orderRegistryAddress();
         IOrderRegistry(orderRegistryAddr).registerLimitOrder(onchainVaults, sellInfo.tokenId, buyInfo.tokenId, feeInfo.tokenId, 
             sellInfo.quantizedAmt, buyInfo.quantizedAmt, feeInfo.quantizedAmt, sellInfo.vaultId, buyInfo.vaultId, feeInfo.vaultId, nonce, EXP_TIME);
+    }
+
+    function setOnchainVaults(address _newAddr) external onlyOwner {
+        emit OnchainVaultsChanged(onchainVaults, _newAddr);
+        onchainVaults = _newAddr;
     }
 }
