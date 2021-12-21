@@ -105,15 +105,10 @@ contract Broker is Ownable {
      * @notice registers ride info
      */
     function addRideInfo(uint256 _rideId, uint256[3] memory _tokenIds, address[3] memory _tokens, address _strategyPool) external onlyOwner {
-        require(_tokenIds[0] != 0, "invalid tokenIdShare");
-        require(_tokenIds[1] != 0, "invalid tokenIdInput");
-        require(_tokenIds[2] != 0, "invalid tokenIdOutput");
-
-        require(_tokens[0] != address(0), "invalid share addr");
-        require(_tokens[1] != address(0), "invalid input token addr");
-        require(_tokens[2] != address(0), "invalid output token addr");
-
-        require(_strategyPool != address(0), "invalid strategy pool addr");
+        require(_tokens[0].isContract(), "invalid share addr");
+        require(_tokens[1].isContract(), "invalid input token addr");
+        require(_tokens[2].isContract(), "invalid output token addr");
+        require(_strategyPool.isContract(), "invalid strategy pool addr");
 
         RideInfo memory rideInfo = rideInfos[_rideId];
         require(rideInfo.tokenIdInput == 0, "ride assets info registered already");
