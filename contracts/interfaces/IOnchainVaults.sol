@@ -31,5 +31,5 @@ interface IOnchainVaults {
 
     function orderRegistryAddress() external view returns (address);
 
-    function registeredAssetType(uint256 assetType) external view returns (bool);
+    function isAssetRegistered(uint256 assetType) external view returns (bool);
 }

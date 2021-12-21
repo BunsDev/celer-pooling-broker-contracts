@@ -267,7 +267,7 @@ contract Broker is Ownable {
     }
 
     function _checkTokenRegistered(uint256 tokenId) view internal {
-        bool tokenRegistered = IOnchainVaults(onchainVaults).registeredAssetType(tokenId);
+        bool tokenRegistered = IOnchainVaults(onchainVaults).isAssetRegistered(tokenId);
         require(tokenRegistered, "token not registered to Starkex");
     }
 
