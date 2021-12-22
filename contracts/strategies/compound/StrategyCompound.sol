@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./interfaces/ICErc20.sol";
+import "./interfaces/ICEth.sol";
 import "../../interfaces/IStrategyPool.sol";
 
 /**
@@ -28,9 +29,21 @@ contract StrategyCompound is IStrategyPool, Ownable {
         broker = _broker;
     }
 
-    function sell(address inputToken, address outputToken, uint256 inputAmt) external onlyBroker returns (uint256 outputAmt) {
+    function sellErc(address inputToken, address outputToken, uint256 inputAmt) external onlyBroker returns (uint256 outputAmt) {
         IERC20(inputToken).safeTransferFrom(msg.sender, address(this), inputAmt);
-        outputAmt = ICErc20(outputToken).mint(inputAmt);
+        uint256 amtBeforeSell = ICErc20(outputToken).balanceOf(address(this));
+        uint256 mintResult = ICErc20(outputToken).mint(inputAmt);
+        require(mintResult == 0, "Couldn't mint cToken");
+        uint256 amtAfterSell = ICErc20(outputToken).balanceOf(address(this));
+        outputAmt = amtAfterSell - amtBeforeSell;
+        IERC20(outputToken).safeTransfer(msg.sender, outputAmt);
+    }
+
+    function sellEth(address outputToken) external onlyBroker payable returns (uint256 outputAmt) {
+        uint256 amtBeforeSell = ICEth(outputToken).balanceOf(address(this));
+        ICEth(outputToken).mint{value: msg.value}();
+        uint256 amtAfterSell = ICEth(outputToken).balanceOf(address(this));
+        outputAmt = amtAfterSell - amtBeforeSell;
         IERC20(outputToken).safeTransfer(msg.sender, outputAmt);
     }
 

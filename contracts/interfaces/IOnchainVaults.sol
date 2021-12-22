@@ -32,4 +32,6 @@ interface IOnchainVaults {
     function orderRegistryAddress() external view returns (address);
 
     function isAssetRegistered(uint256 assetType) external view returns (bool);
+
+    function getAssetInfo(uint256 assetType) external view returns (bytes memory assetInfo);
 }

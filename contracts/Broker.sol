@@ -35,6 +35,10 @@ contract Broker is Ownable {
     mapping (uint256=>uint256) public slippages; // rideid=>slippage, slippage in denominator 10000
     uint256 public constant SLIPPAGE_DENOMINATOR = 10000;
 
+    bytes4 internal constant ERC20_SELECTOR = bytes4(keccak256("ERC20Token(address)"));
+    bytes4 internal constant ETH_SELECTOR = bytes4(keccak256("ETH()"));
+    uint256 internal constant SELECTOR_OFFSET = 0x20;
+
     // Starkex token id of this mint token
 
     struct RideInfo {
@@ -105,17 +109,13 @@ contract Broker is Ownable {
      * @notice registers ride info
      */
     function addRideInfo(uint256 _rideId, uint256[3] memory _tokenIds, address[3] memory _tokens, address _strategyPool) external onlyOwner {
-        require(_tokens[0].isContract(), "invalid share addr");
-        require(_tokens[1].isContract(), "invalid input token addr");
-        require(_tokens[2].isContract(), "invalid output token addr");
-        require(_strategyPool.isContract(), "invalid strategy pool addr");
-
         RideInfo memory rideInfo = rideInfos[_rideId];
         require(rideInfo.tokenIdInput == 0, "ride assets info registered already");
 
-        _checkTokenRegistered(_tokenIds[0]);
-        _checkTokenRegistered(_tokenIds[1]);
-        _checkTokenRegistered(_tokenIds[2]);
+        require(_strategyPool.isContract(), "invalid strategy pool addr");
+        _checkValidTokenIdAndAddr(_tokenIds[0], _tokens[0]);
+        _checkValidTokenIdAndAddr(_tokenIds[1], _tokens[1]);
+        _checkValidTokenIdAndAddr(_tokenIds[2], _tokens[2]);
 
         IOnchainVaults ocv = IOnchainVaults(onchainVaults);
         uint256 quantumShare = ocv.getQuantum(_tokenIds[0]);
@@ -136,7 +136,7 @@ contract Broker is Ownable {
         require(prices[_rideId] != 0, "price not set");
         require(slippages[_rideId] != 0, "slippage not set");
         require(ridesShares[_rideId] == 0, "already mint for this ride"); 
-        _checkTokenRegistered(_tokenIdFee);
+        _checkValidTokenId(_tokenIdFee);
 
         IShareToken(rideInfo.share).mint(address(this), _amount);
 
@@ -158,7 +158,7 @@ contract Broker is Ownable {
         uint256 amount = ridesShares[_rideId];
         require(amount > 0, "no shares to cancel sell"); 
         require(!rideDeparted[_rideId], "ride departed already");
-        _checkTokenRegistered(_tokenIdFee);
+        _checkValidTokenId(_tokenIdFee);
 
         RideInfo memory rideInfo = rideInfos[_rideId]; //amount > 0 implies that the rideAssetsInfo already registered
         _submitOrder(OrderAssetInfo(rideInfo.tokenIdInput, amount / rideInfo.quantumInput, _rideId), 
@@ -173,7 +173,7 @@ contract Broker is Ownable {
      */
     function departRide(uint256 _rideId, uint256 _tokenIdFee, uint256 _quantizedAmtFee, uint256 _vaultIdFee) external onlyOwner {
         require(!rideDeparted[_rideId], "ride departed already");
-        _checkTokenRegistered(_tokenIdFee);
+        _checkValidTokenId(_tokenIdFee);
 
         rideDeparted[_rideId] = true;
 
@@ -192,8 +192,14 @@ contract Broker is Ownable {
             inputTokenAmt = inputTokenQuantizedAmt * rideInfo.quantumInput;
         }
 
-        IERC20(rideInfo.inputToken).safeIncreaseAllowance(rideInfo.strategyPool, inputTokenAmt);
-        uint256 outputAmt = IStrategyPool(rideInfo.strategyPool).sell(rideInfo.inputToken, rideInfo.outputToken, inputTokenAmt);
+        uint256 outputAmt;
+        if (rideInfo.inputToken == address(0) /*ETH*/) {
+            IStrategyPool(rideInfo.strategyPool).sellEth{value: inputTokenAmt}(rideInfo.outputToken);
+        } else {
+            IERC20(rideInfo.inputToken).safeIncreaseAllowance(rideInfo.strategyPool, inputTokenAmt);
+            outputAmt = IStrategyPool(rideInfo.strategyPool).sellErc(rideInfo.inputToken, rideInfo.outputToken, inputTokenAmt);
+        }
+
         {
             uint256 expectMinResult = amount * prices[_rideId] * (SLIPPAGE_DENOMINATOR - slippages[_rideId]) / PRICE_DECIMALS / SLIPPAGE_DENOMINATOR;
             require(outputAmt >= expectMinResult, "price and slippage not fulfilled");
@@ -252,7 +258,12 @@ contract Broker is Ownable {
         } else {
             //swap to input boken
             ocv.withdrawFromVault(rideInfo.tokenIdInput, _rideId, _redeemAmount / rideInfo.quantumInput);
-            IERC20(rideInfo.inputToken).safeTransfer(msg.sender, _redeemAmount);
+            if (rideInfo.inputToken == address(0) /*ETH*/) {
+                (bool success, ) = msg.sender.call{value: _redeemAmount}(""); 
+                require(success, "ETH_TRANSFER_FAILED");
+            } else {
+                IERC20(rideInfo.inputToken).safeTransfer(msg.sender, _redeemAmount);
+            }
         }
 
         ridesShares[_rideId] -= _redeemAmount;
@@ -261,9 +272,31 @@ contract Broker is Ownable {
         emit SharesRedeemed(_rideId, _redeemAmount);
     }
 
-    function _checkTokenRegistered(uint256 tokenId) view internal {
-        bool tokenRegistered = IOnchainVaults(onchainVaults).isAssetRegistered(tokenId);
-        require(tokenRegistered, "token not registered to Starkex");
+    function _checkValidTokenIdAndAddr(uint256 tokenId, address token) view internal {
+        bytes4 selector = _checkValidTokenId(tokenId);
+        if (selector == ETH_SELECTOR) {
+            require(token == address(0), "ETH addr should be 0");
+        } else if (selector == ERC20_SELECTOR) {
+            require(token.isContract(), "invalid token addr");
+        }
+    }
+
+    function _checkValidTokenId(uint256 tokenId) view internal returns (bytes4 selector) {
+        selector = extractTokenSelector(IOnchainVaults(onchainVaults).getAssetInfo(tokenId));
+        require(selector == ETH_SELECTOR || selector == ERC20_SELECTOR, "unsupported token"); 
+    }
+
+    function extractTokenSelector(bytes memory assetInfo)
+        internal
+        pure
+        returns (bytes4 selector)
+    {
+        assembly {
+            selector := and(
+                0xffffffff00000000000000000000000000000000000000000000000000000000,
+                mload(add(assetInfo, SELECTOR_OFFSET))
+            )
+        }
     }
 
     function _submitOrder(OrderAssetInfo memory sellInfo, OrderAssetInfo memory buyInfo, OrderAssetInfo memory feeInfo) private {
