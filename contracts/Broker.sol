@@ -53,15 +53,15 @@ contract Broker is Ownable {
     // rideid => RideInfo
     // rideId will also be used as vaultIdShare, vaultIdInput and vaultIdOutput,
     // this is easy to maintain and will assure funds from different rides won’t mix together and create weird edge cases
-    mapping (uint256 => RideInfo) internal rideInfos; 
+    mapping (uint256 => RideInfo) public rideInfos; 
 
     mapping (uint256=>uint256) public ridesShares; // rideid=>amount
     mapping (uint256=>bool) public rideDeparted; // rideid=>bool
     
-    uint256 private nonce;
+    uint256 public nonce;
     uint256 public constant EXP_TIME = 2e7; // expiration time stamp of the limit order 
 
-    mapping (uint256=>uint256) actualPrices; //rideid=>actual price
+    mapping (uint256=>uint256) public actualPrices; //rideid=>actual price
 
     struct OrderAssetInfo {
         uint256 tokenId;
