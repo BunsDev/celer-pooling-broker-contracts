@@ -63,7 +63,7 @@ contract Broker is Ownable {
     mapping (uint256=>bool) public rideDeparted; // rideid=>bool
     
     uint256 public nonce;
-    uint256 public constant EXP_TIME = 2e7; // expiration time stamp of the limit order 
+    uint256 public constant EXP_TIME = 2e6; // expiration time stamp of the limit order 
 
     mapping (uint256=>uint256) public actualPrices; //rideid=>actual price
 
@@ -136,7 +136,9 @@ contract Broker is Ownable {
         require(prices[_rideId] != 0, "price not set");
         require(slippages[_rideId] != 0, "slippage not set");
         require(ridesShares[_rideId] == 0, "already mint for this ride"); 
-        _checkValidTokenId(_tokenIdFee);
+        if (_tokenIdFee != 0) {
+            _checkValidTokenId(_tokenIdFee);
+        }
 
         IShareToken(rideInfo.share).mint(address(this), _amount);
 
@@ -158,7 +160,9 @@ contract Broker is Ownable {
         uint256 amount = ridesShares[_rideId];
         require(amount > 0, "no shares to cancel sell"); 
         require(!rideDeparted[_rideId], "ride departed already");
-        _checkValidTokenId(_tokenIdFee);
+        if (_tokenIdFee != 0) {
+            _checkValidTokenId(_tokenIdFee);
+        }
 
         RideInfo memory rideInfo = rideInfos[_rideId]; //amount > 0 implies that the rideAssetsInfo already registered
         _submitOrder(OrderAssetInfo(rideInfo.tokenIdInput, amount / rideInfo.quantumInput, _rideId), 
@@ -173,7 +177,9 @@ contract Broker is Ownable {
      */
     function departRide(uint256 _rideId, uint256 _tokenIdFee, uint256 _quantizedAmtFee, uint256 _vaultIdFee) external onlyOwner {
         require(!rideDeparted[_rideId], "ride departed already");
-        _checkValidTokenId(_tokenIdFee);
+        if (_tokenIdFee != 0) {
+            _checkValidTokenId(_tokenIdFee);
+        }
 
         rideDeparted[_rideId] = true;
 
