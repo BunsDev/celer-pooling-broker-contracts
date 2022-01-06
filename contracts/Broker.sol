@@ -316,4 +316,8 @@ contract Broker is Ownable {
         emit OnchainVaultsChanged(onchainVaults, _newAddr);
         onchainVaults = _newAddr;
     }
+
+    // To receive ETH when invoking IOnchainVaults.withdrawFromVault
+    receive() external payable {}
+    fallback() external payable {}
 }
