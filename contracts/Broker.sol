@@ -200,7 +200,7 @@ contract Broker is Ownable {
 
         uint256 outputAmt;
         if (rideInfo.inputToken == address(0) /*ETH*/) {
-            IStrategyPool(rideInfo.strategyPool).sellEth{value: inputTokenAmt}(rideInfo.outputToken);
+            outputAmt = IStrategyPool(rideInfo.strategyPool).sellEth{value: inputTokenAmt}(rideInfo.outputToken);
         } else {
             IERC20(rideInfo.inputToken).safeIncreaseAllowance(rideInfo.strategyPool, inputTokenAmt);
             outputAmt = IStrategyPool(rideInfo.strategyPool).sellErc(rideInfo.inputToken, rideInfo.outputToken, inputTokenAmt);
