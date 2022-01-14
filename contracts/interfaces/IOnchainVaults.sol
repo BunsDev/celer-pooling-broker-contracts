@@ -9,6 +9,11 @@ interface IOnchainVaults {
         uint256 quantizedAmount
     ) external;
 
+    function depositEthToVault(
+        uint256 assetId, 
+        uint256 vaultId) 
+    external payable;
+
     function withdrawFromVault(
         uint256 assetId,
         uint256 vaultId,

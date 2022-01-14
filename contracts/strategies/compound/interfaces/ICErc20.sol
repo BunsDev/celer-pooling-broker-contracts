@@ -72,4 +72,10 @@ interface ICErc20 {
     function approve(address spender, uint256 amount) external returns (bool);
 
     function transfer(address dst, uint256 amount) external returns (bool);
+
+    function name() external view  returns (string memory);
+
+    function symbol() external view returns (string memory);
+
+    function decimals() external view returns (uint8);
 }

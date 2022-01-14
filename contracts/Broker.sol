@@ -211,8 +211,13 @@ contract Broker is Ownable {
             require(outputAmt >= expectMinResult, "price and slippage not fulfilled");
             
             actualPrices[_rideId] = outputAmt * PRICE_DECIMALS / amount;
-            IERC20(rideInfo.outputToken).approve(onchainVaults, outputAmt);
-            ocv.depositERC20ToVault(rideInfo.tokenIdOutput, _rideId, outputAmt / rideInfo.quantumOutput);
+
+            if (rideInfo.outputToken != address(0) /*ERC20*/) {
+                IERC20(rideInfo.outputToken).approve(onchainVaults, outputAmt);
+                ocv.depositERC20ToVault(rideInfo.tokenIdOutput, _rideId, outputAmt / rideInfo.quantumOutput);
+            } else {
+                ocv.depositEthToVault{value: outputAmt / rideInfo.quantumOutput}(rideInfo.tokenIdOutput, _rideId);
+            }
         }
 
         _submitOrder(OrderAssetInfo(rideInfo.tokenIdOutput, outputAmt / rideInfo.quantumOutput, _rideId), 
