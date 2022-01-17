@@ -30,8 +30,8 @@ contract Broker is Ownable {
 
     address public onchainVaults;
 
-    mapping (uint256=>uint256) public prices; // rideid=>price, price in decimal 1e6
-    uint256 public constant PRICE_DECIMALS = 1e6;
+    mapping (uint256=>uint256) public prices; // rideid=>price, price in decimal 1e18
+    uint256 public constant PRICE_DECIMALS = 1e18;
     mapping (uint256=>uint256) public slippages; // rideid=>slippage, slippage in denominator 10000
     uint256 public constant SLIPPAGE_DENOMINATOR = 10000;
 
