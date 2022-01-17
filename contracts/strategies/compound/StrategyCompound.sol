@@ -147,4 +147,7 @@ contract StrategyCompound is IStrategyPool, Ownable {
         supportedWrapTokens[_wrapToken] = _enabled;
         emit WrapTokenUpdated(_wrapToken, _enabled);
     }
+
+    receive() external payable {}
+    fallback() external payable {}
 }

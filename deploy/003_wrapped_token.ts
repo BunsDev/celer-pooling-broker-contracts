@@ -9,18 +9,18 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy('StrategyCompound', {
+  await deploy('WrappedToken', {
     from: deployer,
     log: true,
     args: [
-      process.env.BROKER,
-      process.env.COMP,
-      process.env.UNISWAP,
-      process.env.WETH
+      process.env.CTOKEN,
+      process.env.ST_COMP,
+      process.env.COMPTROLLER,
+      process.env.COMP
     ]
   });
 };
 
-deployFunc.tags = ['StComp'];
+deployFunc.tags = ['WToken'];
 deployFunc.dependencies = [];
 export default deployFunc;
