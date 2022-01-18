@@ -68,7 +68,7 @@ contract StrategyCompound is IStrategyPool, Ownable {
             
             // transfer cToken/comp from wrapped token contract and burn the wrapped tokens 
             IWrappedToken(inputToken).burn(inputAmt);
-            uint256 redeemResult = ICErc20(cToken).redeemUnderlying(inputAmt);
+            uint256 redeemResult = ICErc20(cToken).redeem(inputAmt);
             require(redeemResult == 0, "Couldn't redeem cToken");
 
             if (outputToken != address(0) /*ERC20*/) {
