@@ -229,7 +229,7 @@ contract Broker is Ownable {
     /**
      * @notice burn ride shares after ride is done
      */
-    function burnRideShares(uint256 _rideId) public {
+    function burnRideShares(uint256 _rideId) public onlyOwner {
         uint256 amount = ridesShares[_rideId];
         require(amount > 0, "no shares to burn"); 
         
