@@ -213,7 +213,7 @@ contract Broker is Ownable {
             actualPrices[_rideId] = outputAmt * PRICE_DECIMALS / amount;
 
             if (rideInfo.outputToken != address(0) /*ERC20*/) {
-                IERC20(rideInfo.outputToken).approve(onchainVaults, outputAmt);
+                IERC20(rideInfo.outputToken).safeIncreaseAllowance(onchainVaults, outputAmt);
                 ocv.depositERC20ToVault(rideInfo.tokenIdOutput, _rideId, outputAmt / rideInfo.quantumOutput);
             } else {
                 ocv.depositEthToVault{value: outputAmt / rideInfo.quantumOutput}(rideInfo.tokenIdOutput, _rideId);
@@ -267,7 +267,7 @@ contract Broker is Ownable {
             ocv.withdrawFromVault(rideInfo.tokenIdOutput, _rideId, boughtAmt / rideInfo.quantumOutput);
             IERC20(rideInfo.outputToken).safeTransfer(msg.sender, boughtAmt);
         } else {
-            //swap to input boken
+            //swap to input token
             ocv.withdrawFromVault(rideInfo.tokenIdInput, _rideId, _redeemAmount / rideInfo.quantumInput);
             if (rideInfo.inputToken == address(0) /*ETH*/) {
                 (bool success, ) = msg.sender.call{value: _redeemAmount}(""); 

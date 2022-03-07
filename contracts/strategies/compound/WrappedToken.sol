@@ -4,6 +4,7 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -14,13 +15,14 @@ import "./interfaces/IComptroller.sol";
  * @title Wrapped Token of compound c tokens
  */
 contract WrappedToken is ERC20, Ownable {
+    using Address for address;
     using SafeERC20 for IERC20;
 
     uint8 private immutable _decimals;
 
-    address private ctoken;
+    address private immutable ctoken;
     address public immutable comp; // compound comp token
-    address public comptroller; //compound controller
+    address public immutable comptroller; //compound controller
 
     address public controller; // st comp
     modifier onlyController() {
@@ -29,7 +31,7 @@ contract WrappedToken is ERC20, Ownable {
     }
 
     modifier onlyEOA() {
-        require(msg.sender == tx.origin, "Not EOA");
+        require(msg.sender == tx.origin && !address(msg.sender).isContract(), "Not EOA");
         _;
     }
 
