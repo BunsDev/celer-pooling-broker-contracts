@@ -80,7 +80,11 @@ contract WrappedToken is ERC20, Ownable {
 
     function harvest() external onlyEOA {
         // Claim COMP token.
-        IComptroller(comptroller).claimComp(address(this));
+        address[] memory holders = new address[](1);
+        holders[0] = address(this);
+        ICErc20[] memory cTokens = new ICErc20[](1);
+        cTokens[0] = ICErc20(ctoken);
+        IComptroller(comptroller).claimComp(holders, cTokens, false, true);
     }
 
     function updateController(address _controller) external onlyOwner {
