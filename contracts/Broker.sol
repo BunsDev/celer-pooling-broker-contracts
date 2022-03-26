@@ -156,19 +156,19 @@ contract Broker is Ownable {
     /**
      * @notice cancel selling for input token
      */
-    function cancelSell(uint256 _rideId, uint256 _tokenIdFee, uint256 _quantizedAmtFee, uint256 _vaultIdFee) external onlyOwner {
+    function cancelSell(uint256 _rideId, uint256 _amount, uint256 _tokenIdFee, uint256 _quantizedAmtFee, uint256 _vaultIdFee) external onlyOwner {
         uint256 amount = ridesShares[_rideId];
-        require(amount > 0, "no shares to cancel sell"); 
+        require(amount >= _amount, "no enough shares to cancel sell"); 
         require(!rideDeparted[_rideId], "ride departed already");
         if (_tokenIdFee != 0) {
             _checkValidTokenId(_tokenIdFee);
         }
 
         RideInfo memory rideInfo = rideInfos[_rideId]; //amount > 0 implies that the rideAssetsInfo already registered
-        _submitOrder(OrderAssetInfo(rideInfo.tokenIdInput, amount / rideInfo.quantumInput, _rideId), 
-            OrderAssetInfo(rideInfo.tokenIdShare, amount / rideInfo.quantumShare, _rideId), OrderAssetInfo(_tokenIdFee, _quantizedAmtFee, _vaultIdFee));
+        _submitOrder(OrderAssetInfo(rideInfo.tokenIdInput, _amount / rideInfo.quantumInput, _rideId), 
+            OrderAssetInfo(rideInfo.tokenIdShare, _amount / rideInfo.quantumShare, _rideId), OrderAssetInfo(_tokenIdFee, _quantizedAmtFee, _vaultIdFee));
 
-        emit CancelSell(_rideId, amount);
+        emit CancelSell(_rideId, _amount);
     }
 
     /**
@@ -216,7 +216,7 @@ contract Broker is Ownable {
                 IERC20(rideInfo.outputToken).safeIncreaseAllowance(onchainVaults, outputAmt);
                 ocv.depositERC20ToVault(rideInfo.tokenIdOutput, _rideId, outputAmt / rideInfo.quantumOutput);
             } else {
-                ocv.depositEthToVault{value: outputAmt / rideInfo.quantumOutput}(rideInfo.tokenIdOutput, _rideId);
+                ocv.depositEthToVault{value: outputAmt / rideInfo.quantumOutput * rideInfo.quantumOutput}(rideInfo.tokenIdOutput, _rideId);
             }
         }
 
