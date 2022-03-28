@@ -111,8 +111,9 @@ contract StrategyCompound is IStrategyPool, Ownable {
             // Sell COMP token for obtain more ETH
             IERC20(comp).safeIncreaseAllowance(uniswap, compBalance);
 
-            address[] memory paths = new address[](1);
+            address[] memory paths = new address[](2);
             paths[0] = comp;
+            paths[1] = weth;
 
             IUniswapV2Router02(uniswap).swapExactTokensForETH(
                 compBalance,

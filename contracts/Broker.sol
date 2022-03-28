@@ -265,7 +265,12 @@ contract Broker is Ownable {
             //swap to output token
             uint256 boughtAmt = _redeemAmount * actualPrices[_rideId] / PRICE_DECIMALS;            
             ocv.withdrawFromVault(rideInfo.tokenIdOutput, _rideId, boughtAmt / rideInfo.quantumOutput);
-            IERC20(rideInfo.outputToken).safeTransfer(msg.sender, boughtAmt);
+            if (rideInfo.outputToken == address(0) /*ETH*/) {
+                (bool success, ) = msg.sender.call{value: boughtAmt}(""); 
+                require(success, "ETH_TRANSFER_FAILED");                
+            } else {
+                IERC20(rideInfo.outputToken).safeTransfer(msg.sender, boughtAmt);
+            }
         } else {
             //swap to input token
             ocv.withdrawFromVault(rideInfo.tokenIdInput, _rideId, _redeemAmount / rideInfo.quantumInput);
