@@ -24,6 +24,9 @@ contract WrappedToken is ERC20, Ownable {
     address public immutable comp; // compound comp token
     address public immutable comptroller; //compound controller
 
+    // min comp reward to distribute, taking into the account of the comp swap gas cost in the strategy. default as 0
+    uint256 public minCompRewardToDistribute; 
+
     address public controller; // st comp
     modifier onlyController() {
         require(msg.sender == controller, "caller is not controller");
@@ -36,6 +39,7 @@ contract WrappedToken is ERC20, Ownable {
     }
 
     event ControllerUpdated(address controller);
+    event MinCompRewardToDistributeUpdated(uint256 newValue);
 
     constructor(
         address _ctoken,
@@ -63,7 +67,10 @@ contract WrappedToken is ERC20, Ownable {
         // distribute harvested comp proportional
         uint256 compBalance = IERC20(comp).balanceOf(address(this));
         if (compBalance > 0) {
-            IERC20(comp).safeTransfer(msg.sender, compBalance * _amount / totalSupply());
+            uint256 distAmt = compBalance * _amount / totalSupply();
+            if (distAmt >= minCompRewardToDistribute) {
+                IERC20(comp).safeTransfer(msg.sender, distAmt);
+            }
         }
 
         _burn(msg.sender, _amount);
@@ -90,5 +97,10 @@ contract WrappedToken is ERC20, Ownable {
     function updateController(address _controller) external onlyOwner {
         controller = _controller;
         emit ControllerUpdated(_controller);
+    }
+
+    function updateMinCompRewardToDistribute(uint256 _minComp) external onlyOwner {
+        minCompRewardToDistribute = _minComp;
+        emit MinCompRewardToDistributeUpdated(_minComp);
     }
 }
